@@ -32,9 +32,12 @@ def create_dataset(request):
 
     students = Student.objects.all()
     for item in BASE:
+        used_grade_index = -1
         for year in item["years"]:
             for semester in ['1', '2']:
-                for grade in GRADES:
+                for increment in range(0, 2):
+                    grade = GRADES[used_grade_index+1]
+                    used_grade_index += 1
                     for student in students:
                         # This will prevent creation of records if the count exceeded 10000. But this might
                         # effect for the analysis coz the data is not fully completed.
@@ -89,7 +92,7 @@ def fetch_chart_data(request):
 
                     avg_value = Mark.objects.filter(grade__range=grade, semester__in=semesters, student__in=students,
                                                     subject=subject, year__range=years).aggregate(Avg('mark'))
-                    avg_data.append(round(avg_value['mark__avg'], 2) or 0)
+                    avg_data.append(round(avg_value['mark__avg'] or 0, 2))
                 series = [
                     {
                         "name": "Subject",
