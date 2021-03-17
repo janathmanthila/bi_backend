@@ -3,17 +3,13 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import APIException
 from django.db.models import Sum, Avg
 from faker import Faker
-from itertools import zip_longest
 import random
 
 from .models import *
 from .serializers import *
 
-# SUBJECTS = ['Maths', 'Science']
-# SUBJECTS = ['Maths', 'Science', 'IT']
-# GRADES = ['1', '2']
+
 GRADES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12' ]
-# CALENDER_YEAR = ['2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010']
 
 BASE = [
     {"subject": "Maths", "years": ['2001', '2002', '2003'], "color": "#009888"},
@@ -33,20 +29,6 @@ def create_dataset(request):
     # Create Students
     for student in range(0, 20):
         Student.objects.create(name=fake.name(), email=fake.email(), city=fake.city(), phone=fake.phone_number())
-
-        # Create Marks Records
-        # for subject in SUBJECTS:
-        #     for year in CALENDER_YEAR:
-        #         for semester in ['1', '2']:
-        #             for grade in GRADES:
-        #                 for student in Student.objects.all():
-        #                     # This will prevent creation of records if the count exceeded 10000. But this might
-        #                     # effect for the analysis coz the data is not fully completed.
-        #                     if Mark.objects.all().count() < 10000:
-        #                         Mark.objects.create(student=student, subject=subject, mark=random.randint(1, 100),
-        #                                             semester=semester, grade=grade, year=year)
-        #                     else:
-        #                         break
 
     students = Student.objects.all()
     for item in BASE:
@@ -182,7 +164,6 @@ def fetch_chart_data(request):
                     ]
                 }
                 result.append(data)
-
 
         return Response(result)
     else:
