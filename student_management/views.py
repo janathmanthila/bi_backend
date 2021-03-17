@@ -16,9 +16,9 @@ GRADES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12' ]
 # CALENDER_YEAR = ['2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010']
 
 BASE = [
-    {"subject": "Maths", "years": ['2001', '2002', '2003']},
-    {"subject": "Science", "years": ['2004', '2005', '2006']},
-    {"subject": "IT", "years": ['2007', '2008', '2009', '2010']}
+    {"subject": "Maths", "years": ['2001', '2002', '2003'], "color": "#009888"},
+    {"subject": "Science", "years": ['2004', '2005', '2006'], "color": "#FF9A00"},
+    {"subject": "IT", "years": ['2007', '2008', '2009', '2010'], "color": "#50342C"}
 ]
 
 FIELDS = {"Marks": "mark"}
@@ -92,21 +92,22 @@ def fetch_chart_data(request):
     if request.data:
         result = []
         for chart in request.data:
+            grade = chart['grades']
+            semesters = chart['semesters']
+            semesters.sort()
+            students = chart['students']
+            years = chart['years']
             if chart['type'] == "Line and Bar":
                 subjects = chart['subjects']
                 column_data = []
                 avg_data = []
                 for subject in subjects:
-                    grade = chart['grades']
-                    semesters = chart['semesters']
-                    students = chart['students']
-                    years = chart['years']
                     value = Mark.objects.filter(grade__range=grade, semester__in=semesters, student__in=students, subject=subject, year__range=years).aggregate(Sum('mark'))
                     column_data.append(value['mark__sum'] or 0)
 
                     avg_value = Mark.objects.filter(grade__range=grade, semester__in=semesters, student__in=students,
                                                     subject=subject, year__range=years).aggregate(Avg('mark'))
-                    avg_data.append(avg_value['mark__avg'] or 0)
+                    avg_data.append(round(avg_value['mark__avg'], 2) or 0)
                 series = [
                     {
                         "name": "Subject",
@@ -139,6 +140,50 @@ def fetch_chart_data(request):
                     ]
                 }
                 result.append(data)
+            else:
+                multiple_column_data = []
+                lables = []
+                for item in BASE:
+                    col_data = {
+                        "name": item['subject'],
+                        "type": 'column',
+                        "data": [],
+                        "lineWidth": 1,
+                        "color": item['color']
+                    }
+
+                    for year in range(years[0], years[1]+1):
+                        for semester in semesters:
+
+                            value = Mark.objects.filter(grade__range=grade, semester=semester, student__in=students,
+                                                        subject=item['subject'], year=year).aggregate(Sum('mark'))
+                            col_data["data"].append(value['mark__sum'] or 0)
+
+                    multiple_column_data.append(col_data)
+                for year in range(years[0], years[1] + 1):
+                    for semester in semesters:
+                        lables.append(f"{year} - {semester}")
+                data = {
+                    **chart,
+                    'series': multiple_column_data,
+                    "yAxis": [
+                        {
+                            "title": {
+                                "text": 'Marks'
+                            },
+
+                        },
+                    ],
+                    "xAxis": [
+                        {
+                            "categories": lables
+
+                        },
+                    ]
+                }
+                result.append(data)
+
+
         return Response(result)
     else:
         raise APIException("Invalid Request")
